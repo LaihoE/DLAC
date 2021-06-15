@@ -5,13 +5,11 @@ import csv
 
 class DataMover():
     """
-    PARSES TICKS BEFORE EVERY KILL AND SPLITS EVERY KILL TO CSV
+    PARSES TICKS LEADING UP TO A KILL AND SPLITS THEM IN CSVs
     """
 
     def __init__(self):
         self.x = {}
-        #sqlEngine = create_engine(dbconn)
-        #self.dbConnection = sqlEngine.connect()
         self.n_rounds = None
         self.MatchId = None
 
@@ -21,6 +19,18 @@ class DataMover():
             self.x = x
             self.n_rounds = len(self.x["GameRounds"])
             self.MatchId = self.x["MatchId"]
+
+    def get_players_ids(self):
+        players = []
+        for t in range(2):
+            if t ==0:
+                team_index = "T"
+            else:
+                team_index = "CT"
+            for i in range(5):
+                players.append((self.x["GameRounds"][1]["Frames"][1][team_index]["Players"][i]["Name"],self.x["GameRounds"][1]["Frames"][1][team_index]["Players"][i]["SteamId"]))
+        return players
+
 
     def get_pos_player(self, steamid, main_folder):
         """
@@ -117,18 +127,37 @@ class DataMover():
 
         return retruning_list
 
-def main(json_name,steamid):
+
+def main(json_name, steamid):
+    """
+    Takes in a parsed json file and a player name. Creates CSV files from each kill, having
+    the ticks before the kill happened.
+
+    :param json_name:
+    :param steamid:
+    :return:
+    """
     datamover = DataMover()
     datamover.read_json(f"C:/Users/emill/PycharmProjects/csgoparse/csgo/games/{json_name}")
     datamover.get_pos_player(f"{steamid}",f"D:/Users/emill/csgocheaters/games/")
     datamover.get_kills_tick(r'D:\Users\emill\csgocheaters\kills/')
 
-    mainfile = r'D:\Users\emill\csgocheaters\games/testgame.csv'
-    killfile = r'D:\Users\emill\csgocheaters\kills/testgame.csv'
+    json_name_without_end = json_name.replace(".json","")
+    mainfile = f'D:/Users/emill/csgocheaters/games/{json_name_without_end}.csv'
+    killfile = f'D:/Users/emill/csgocheaters/kills/{json_name_without_end}.csv'
     out_folder = r"D:\Users\emill\csgocheaters\singlekills/"
     datamover.split_df_by_kill(mainfile, killfile, steamid, out_folder, write_to_csv=True)
 
+def get_names(json_name):
+    datamover = DataMover()
+    datamover.read_json(f"C:/Users/emill/PycharmProjects/csgoparse/csgo/games/{json_name}")
+    players = datamover.get_players_ids()
+    for x in players:
+        print(x)
 
-json_name = 'testgame.json'
-steamid = "76561198977257843"
+
+
+json_name = 'match730_003449400684103860725_0345880089_181.json'
+steamid = "76561198066395116"
 main(json_name,steamid)
+get_names(json_name)
