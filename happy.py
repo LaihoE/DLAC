@@ -4,6 +4,10 @@ import csv
 
 
 class DataMover():
+    """
+    PARSES TICKS BEFORE EVERY KILL AND SPLITS EVERY KILL TO CSV
+    """
+
     def __init__(self):
         self.x = {}
         #sqlEngine = create_engine(dbconn)
@@ -17,7 +21,6 @@ class DataMover():
             self.x = x
             self.n_rounds = len(self.x["GameRounds"])
             self.MatchId = self.x["MatchId"]
-            print(self.MatchId)
 
     def get_pos_player(self, steamid, main_folder):
         """
@@ -42,21 +45,17 @@ class DataMover():
                             team_index = "T"
                         else:
                             team_index = "CT"
+                        try:
+                            if str(self.x["GameRounds"][rounds]["Frames"][frames][team_index]["Players"][player]["SteamId"]) == steamid:
 
-                        #print(self.x["GameRounds"][rounds]["Frames"][frames][team_index]["Players"][player]["SteamId"])
-                        print(str(self.x["GameRounds"][rounds]["Frames"][frames][team_index]["Players"][player]["SteamId"]), "==", steamid)
-                        if str(self.x["GameRounds"][rounds]["Frames"][frames][team_index]["Players"][player]["SteamId"]) == steamid:
-                            try:
-                                print(self.x["GameRounds"][rounds]["Frames"][frames]["Tick"])
                                 dikt = self.x["GameRounds"][rounds]["Frames"][frames][team_index]["Players"][player]
                                 dikt["TICK"] = self.x["GameRounds"][rounds]["Frames"][frames]["Tick"]
-                                print(self.x["GameRounds"][rounds]["Frames"][frames][team_index]["Players"][player])
+
                                 df = pd.DataFrame.from_records(dikt)
-                                print(df.columns)
-                                #df.to_sql(name='CSGO2', con=self.dbConnection, index=False, if_exists='append')
+
                                 df.to_csv(f"{main_folder}{self.MatchId}.csv", mode='a',header=False)
-                            except Exception as e:
-                                print(e)
+                        except Exception as e:
+                            print(e)
                             """with open(f"{main_folder}{self.MatchId}.csv", 'a') as csvfile:
                                 writer = csv.DictWriter(csvfile,fieldnames=dikt.keys())
                                 writer.writeheader()
@@ -84,7 +83,6 @@ class DataMover():
 
 
         for rounds in range(self.n_rounds):
-            print(self.x["GameRounds"][rounds]["Kills"][0])
             for k in range(len(self.x["GameRounds"][rounds]["Kills"])):
                 df = pd.DataFrame.from_records(self.x["GameRounds"][rounds]["Kills"][k],index=[0])
                 #df.to_sql(name='kill2', con=self.dbConnection, index=False, if_exists='append')
@@ -101,7 +99,6 @@ class DataMover():
         #df2 = pd.read_sql(f'SELECT * FROM kill2 WHERE AttackerSteamId="{steamid}"',con=self.dbConnection)
         df1 = pd.read_csv(mainfile)
         df2 = pd.read_csv(killfile)
-        print(df2["AttackerSteamId"])
         df2 = df2[df2["AttackerSteamId"] == int(steamid)]
         # drop dupes
         df2 = df2.drop_duplicates()
@@ -120,16 +117,18 @@ class DataMover():
 
         return retruning_list
 
+def main(json_name,steamid):
+    datamover = DataMover()
+    datamover.read_json(f"C:/Users/emill/PycharmProjects/csgoparse/csgo/games/{json_name}")
+    datamover.get_pos_player(f"{steamid}",f"D:/Users/emill/csgocheaters/games/")
+    datamover.get_kills_tick(r'D:\Users\emill\csgocheaters\kills/')
 
-datamover = DataMover()
-datamover.read_json(r"C:\Users\emill\PycharmProjects\csgoparse\csgo\games/testgame.json")
-#datamover.get_pos_player("76561198977257843",f"D:/Users/emill/csgocheaters/games/")
-datamover.get_kills_tick(r'D:\Users\emill\csgocheaters\kills/')
+    mainfile = r'D:\Users\emill\csgocheaters\games/testgame.csv'
+    killfile = r'D:\Users\emill\csgocheaters\kills/testgame.csv'
+    out_folder = r"D:\Users\emill\csgocheaters\singlekills/"
+    datamover.split_df_by_kill(mainfile, killfile, steamid, out_folder, write_to_csv=True)
 
 
-mainfile = r'D:\Users\emill\csgocheaters\games/testgame.csv'
-killfile = r'D:\Users\emill\csgocheaters\kills/testgame.csv'
+json_name = 'testgame.json'
 steamid = "76561198977257843"
-out_folder = r"D:\Users\emill\csgocheaters\singlekills/"
-
-X = datamover.split_df_by_kill(mainfile,killfile,steamid,out_folder,write_to_csv=True)
+main(json_name,steamid)
