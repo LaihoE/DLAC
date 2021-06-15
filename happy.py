@@ -101,11 +101,10 @@ class DataMover():
         #df2 = pd.read_sql(f'SELECT * FROM kill2 WHERE AttackerSteamId="{steamid}"',con=self.dbConnection)
         df1 = pd.read_csv(mainfile)
         df2 = pd.read_csv(killfile)
-
-
+        print(df2["AttackerSteamId"])
+        df2 = df2[df2["AttackerSteamId"] == int(steamid)]
         # drop dupes
         df2 = df2.drop_duplicates()
-        print(df1,df2)
         for cnt, x in enumerate(range(len(df2))):
             # Get the next kill and append to list
             mintick = min(df2["TICK"])
