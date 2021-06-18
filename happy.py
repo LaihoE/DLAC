@@ -112,7 +112,7 @@ class Killparser():
         df2 = df2[df2["AttackerSteamId"] == int(steamid)]
         # drop dupes
         df2 = df2.drop_duplicates()
-        n_files = len([name for name in os.listdir(r'D:\Users\emill\csgocheaters\singlekills/')])
+        n_files = len([name for name in os.listdir(r'D:\Users\emill\csgocheaters\cleankills/')])
         print("n_files",n_files)
 
         for cnt, x in enumerate(range(len(df2))):
@@ -142,30 +142,30 @@ def main(json_name, steamid):
     :return:
     """
     datamover = Killparser()
-    datamover.read_json(f"C:/Users/emill/PycharmProjects/csgoparse/csgo/games/{json_name}")
+    datamover.read_json(f"C:/Users/emill/PycharmProjects/csgoparse/csgo/examples/bsd/{json_name}")
     datamover.get_pos_player(f"{steamid}",f"D:/Users/emill/csgocheaters/games/")
     datamover.get_kills_csv(r'D:\Users\emill\csgocheaters\kills/')
 
     json_name_without_end = json_name.replace(".json","")
     mainfile = f'D:/Users/emill/csgocheaters/games/{json_name_without_end}.csv'
     killfile = f'D:/Users/emill/csgocheaters/kills/{json_name_without_end}.csv'
-    out_folder = r"D:\Users\emill\csgocheaters\singlekills/"
+    out_folder = r"D:\Users\emill\csgocheaters\cleankills/"
     datamover.split_df_by_kill(mainfile, killfile, steamid, out_folder, write_to_csv=True)
 
 
 def get_names(json_name):
     datamover = Killparser()
-    datamover.read_json(f"C:/Users/emill/PycharmProjects/csgoparse/csgo/examples/asd/{json_name}")
+    datamover.read_json(f"C:/Users/emill/PycharmProjects/csgoparse/csgo/examples/bsd/{json_name}")
     players = datamover.get_players_ids()
     return players
 
-import os
-for cnt,filename in enumerate(os.listdir(r'C:/Users\emill\PycharmProjects\csgoparse\csgo\examples\asd')):
+"""import os
+for cnt,filename in enumerate(os.listdir(r'C:/Users\emill\PycharmProjects\csgoparse\csgo\examples/asd')):
     steamid = 234
     if filename.endswith('.json'):
         json_name = filename
-        #players = get_names(json_name)
-        #player = players[0][1]
+
+
         df = pd.read_csv("CHEATERURLS2.csv")
         # print("JSONNAME",json_name)
         for i in range(len(df["game"])):
@@ -178,11 +178,21 @@ for cnt,filename in enumerate(os.listdir(r'C:/Users\emill\PycharmProjects\csgopa
 
                 if cheaters_id[-1] != "/":
                     id = cheaters_id.split("/")[4]
-                    print(id[4])
+                    print("id",id)
 
                     steamid = id
                     try:
                         main(json_name, steamid)
                     except Exception as e:
-                        print(e)
+                        print(e)"""
+
+import os
+for cnt,filename in enumerate(os.listdir(r'C:/Users\emill\PycharmProjects\csgoparse\csgo\examples\bsd')):
+    steamid = 76561198055893769
+    if filename.endswith('.json'):
+        json_name = filename
+        try:
+            main(json_name, steamid)
+        except Exception as e:
+            print(e)
 
