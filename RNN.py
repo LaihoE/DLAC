@@ -43,7 +43,7 @@ X, y = datacreator()
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42)
 print("X",X_train.shape)
 print("len y:",len(y_train))
-y_train = np.asarray(y_train).astype('int32').reshape((-1,1))
+y_train = np.asarray(y_train).astype('int').reshape((-1,1))
 print(y_train)
 print(y_train.shape)
 # samples, time steps, and features.
@@ -66,7 +66,7 @@ model.add(Dropout(0.2))
 model.add(Dense(1,activation='sigmoid'))
 
 # Compiling the RNN
-model.compile(optimizer = 'adam', loss = 'binary_crossentropy',metrics=['Accuracy'])
+model.compile(optimizer = 'adam', loss = 'binary_crossentropy',metrics=['accuracy'])
 
 # Fitting the RNN to the Training set
-model.fit(X_train, y_train, epochs = 100, batch_size = 2)
+model.fit(X_train, y_train, epochs = 100, batch_size = 1)
