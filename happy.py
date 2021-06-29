@@ -1,11 +1,11 @@
 import json
 import pandas as pd
 import csv
-
+import os
 
 class Killparser():
     """
-    PARSES TICKS LEADING UP TO A KILL AND SPLITS THEM IN CSVs
+    PARSES TICKS LEADING UP TO A KILL AND SPLITS THEM INTO CSVs
     """
 
     def __init__(self):
@@ -66,11 +66,7 @@ class Killparser():
                                 df.to_csv(f"{main_folder}{self.MatchId}.csv", mode='a',header=False)
                         except Exception as e:
                             pass
-                            """with open(f"{main_folder}{self.MatchId}.csv", 'a') as csvfile:
-                                writer = csv.DictWriter(csvfile,fieldnames=dikt.keys())
-                                writer.writeheader()
-                                for data in dikt:
-                                    writer.writerow(data)"""
+
 
     def get_kills_csv(self,kill_folder):
         """
@@ -95,7 +91,6 @@ class Killparser():
             try:
                 for k in range(len(self.x["GameRounds"][rounds]["Kills"])):
                     df = pd.DataFrame.from_records(self.x["GameRounds"][rounds]["Kills"][k],index=[0])
-                    #df.to_sql(name='kill2', con=self.dbConnection, index=False, if_exists='append')
                     df.to_csv(f"{kill_folder}{self.MatchId}.csv", mode='a', header=False)
             except Exception as e:
                 print(e)
@@ -112,7 +107,8 @@ class Killparser():
         df2 = df2[df2["AttackerSteamId"] == int(steamid)]
         # drop dupes
         df2 = df2.drop_duplicates()
-        n_files = len([name for name in os.listdir(r'D:\Users\emill\csgocheaters\cleankills/')])
+        # Check how many files in output dir so to know what name to give file
+        n_files = len([name for name in os.listdir(out_folder)])
         print("n_files",n_files)
 
         for cnt, x in enumerate(range(len(df2))):
@@ -122,7 +118,7 @@ class Killparser():
 
             if len(out_df)>0:
                 retruning_list.append(out_df)
-                if write_to_csv == True:
+                if write_to_csv is True:
                     out_df.to_csv(f"{out_folder}/{n_files + cnt}.csv")
 
             # Cut off kill from big dfs
@@ -132,7 +128,7 @@ class Killparser():
         return retruning_list
 
 
-def main(json_name, steamid):
+def main(json_input_folder,json_name, steamid, out_folder):
     """
     Takes in a parsed json file and a player name. Creates CSV files from each kill, having
     the ticks before the kill happened.
@@ -142,14 +138,18 @@ def main(json_name, steamid):
     :return:
     """
     datamover = Killparser()
-    datamover.read_json(f"C:/Users/emill/PycharmProjects/csgoparse/csgo/examples/bsd/{json_name}")
-    datamover.get_pos_player(f"{steamid}",f"D:/Users/emill/csgocheaters/games/")
-    datamover.get_kills_csv(r'D:\Users\emill\csgocheaters\kills/')
+    json_name_without_end = json_name.replace(".json", "")
+    mainfile = f"{out_folder}/games/{json_name_without_end}.csv"
+    killfile = f"{out_folder}/kills/{json_name_without_end}.csv"
 
-    json_name_without_end = json_name.replace(".json","")
-    mainfile = f'D:/Users/emill/csgocheaters/games/{json_name_without_end}.csv'
-    killfile = f'D:/Users/emill/csgocheaters/kills/{json_name_without_end}.csv'
-    out_folder = r"D:\Users\emill\csgocheaters\cleankills/"
+    datamover.read_json(f"{json_input_folder}/{json_name}")
+    datamover.get_pos_player(steamid, mainfile)
+    datamover.get_kills_csv(killfile)
+
+
+    # mainfile = f'D:/Users/emill/csgocheaters/games/{json_name_without_end}.csv'
+    # killfile = f'D:/Users/emill/csgocheaters/kills/{json_name_without_end}.csv'
+
     datamover.split_df_by_kill(mainfile, killfile, steamid, out_folder, write_to_csv=True)
 
 
@@ -159,40 +159,58 @@ def get_names(json_name):
     players = datamover.get_players_ids()
     return players
 
-"""import os
-for cnt,filename in enumerate(os.listdir(r'C:/Users\emill\PycharmProjects\csgoparse\csgo\examples/asd')):
-    steamid = 234
-    if filename.endswith('.json'):
-        json_name = filename
+
+def csv_steamid(json_input_folder, output_folder):
+    """
+    json_folder: Folder with parsed demos (json files)
+    output_folder: Folder where the outputs are made
+    """
+
+    for cnt,filename in enumerate(os.listdir(json_input_folder)):
+        steamid = 42
+        if filename.endswith('.json'):
+            json_name = filename
+
+            df = pd.read_csv("CHEATERURLS2.csv")
+            print("JSONNAME",json_name)
+            for i in range(len(df["game"])):
+                x = df["game"].iloc[i]
+                game = x.split('/')[2]
+                game = game.split('.')[0]
+                if json_name == f"{game}.json":
+                    cheaters_id = df["profile"].iloc[i]
+                    print(cheaters_id)
+
+                    if cheaters_id[-1] != "/":
+                        id = cheaters_id.split("/")[4]
+                        print("id",id)
+
+                        steamid = id
+                        try:
+                            main(json_input_folder,json_name, steamid)
+                        except Exception as e:
+                            print(e)
 
 
-        df = pd.read_csv("CHEATERURLS2.csv")
-        # print("JSONNAME",json_name)
-        for i in range(len(df["game"])):
-            x = df["game"].iloc[i]
-            game = x.split('/')[2]
-            game = game.split('.')[0]
-            if json_name == f"{game}.json":
-                cheaters_id = df["profile"].iloc[i]
-                print(cheaters_id)
 
-                if cheaters_id[-1] != "/":
-                    id = cheaters_id.split("/")[4]
-                    print("id",id)
 
-                    steamid = id
-                    try:
-                        main(json_name, steamid)
-                    except Exception as e:
-                        print(e)"""
+def json_to_kill_csv(json_input_folder,output_folder,steamid):
+    """
+    json_input_folder: Folder with parsed demos (json files)
+    output_folder: Folder where the outputs are created
+    """
+    import os
+    for cnt, filename in enumerate(os.listdir(json_input_folder)):
+        if filename.endswith('.json'):
+            json_name = filename
+            try:
+                main(json_input_folder, json_name, steamid, output_folder)
+            except Exception as e:
+                print(e)
 
-import os
-for cnt,filename in enumerate(os.listdir(r'C:/Users\emill\PycharmProjects\csgoparse\csgo\examples\bsd')):
-    steamid = 76561198055893769
-    if filename.endswith('.json'):
-        json_name = filename
-        try:
-            main(json_name, steamid)
-        except Exception as e:
-            print(e)
 
+if __name__ == "__main__":
+    json_input_folder = 'C:/Users/emill/PycharmProjects/csgoparse/csgo/examples/bsd'
+    out_folder = "D:/Users/emill/csgocheaters/cleankills/"
+    steamid = 76561198134270402
+    json_to_kill_csv(json_input_folder,out_folder,steamid)
