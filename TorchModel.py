@@ -5,7 +5,7 @@ import pandas as pd
 import os
 import os
 import time
-
+import random
 import torch
 import torch.nn as nn
 
@@ -15,17 +15,19 @@ if is_cuda:
     device = torch.device("cuda")
 else:
     device = torch.device("cpu")
-
-
+print(device)
 
 def datacreator():
     y_train = []
     bigx = []
     X_train = []
-    for folder in ["singlekills","cleankills"]:
-        for cnt,x in enumerate(os.listdir(f"C:/Users/emill/PycharmProjects/open_anti_cheat/cleandrity/{folder}")):
+    for folder in ["singlekills"]:
+        for x in os.listdir(f"D:/Users/emill/csgocheaters/{folder}"):
 
-            df = pd.read_csv(f"C:/Users/emill/PycharmProjects/open_anti_cheat/cleandrity/{folder}/{x}",index_col=0)
+            df = pd.read_csv(f"D:/Users/emill/csgocheaters/{folder}/{x}",index_col=0)
+        #for cnt,x in enumerate(os.listdir(f"C:/Users/emill/PycharmProjects/open_anti_cheat/cleandrity/{folder}")):
+
+            #df = pd.read_csv(f"C:/Users/emill/PycharmProjects/open_anti_cheat/cleandrity/{folder}/{x}",index_col=0)
 
             if len(df) > 20:
                 df = df.select_dtypes(['number'])
@@ -50,21 +52,41 @@ def datacreator():
 
 class DemoDataset(Dataset):
     def __init__(self):
-
-        x,y = datacreator()
-        #xy = np.load(r"D:\Users\emill\csgocheaters\singlekills/11.csv")
-        x = torch.from_numpy(x[:, 1:])
-        self.n_samples = x.shape[0]
-        y = torch.from_numpy(np.ones(self.n_samples))
-
-        self.x, self.y = x.type(torch.DoubleTensor), y.type(torch.DoubleTensor)
-        print(self.y.type(),"AAAAAAAAAAAAAAA")
-
-    def __getitem__(self, index):
-        return self.x[index], self.y[index]
+        X = []
+        dirty = os.listdir(f"C:/Users/emill/PycharmProjects/open_anti_cheat/cleandrity/singlekills")
+        clean = os.listdir(f"C:/Users/emill/PycharmProjects/open_anti_cheat/cleandrity/cleankills")
+        for x in dirty:
+            X.append((x, 1))
+        for x in clean:
+            X.append((x, 0))
+        random.shuffle(X)
+        print(X)
+        self.data = X
 
     def __len__(self):
-        return self.n_samples
+        return 200
+
+    def __getitem__(self, index):
+        file_info = self.data[index]
+        if file_info[1] == 1:
+            df = pd.read_csv(
+                f"C:/Users/emill/PycharmProjects/open_anti_cheat/cleandrity/singlekills/{file_info[0]}",index_col=0)
+            df = df.select_dtypes(['number'])
+            df = df.drop("sus", axis=1)  # junk
+            print(df)
+            X = np.array(df.iloc[len(df) - 20:])
+            X = torch.tensor(X)
+            return X, file_info[1]
+
+        elif file_info[1] == 0:
+            df = pd.read_csv(
+                f"C:/Users/emill/PycharmProjects/open_anti_cheat/cleandrity/singlekills/{file_info[0]}",index_col=0)
+            df = df.select_dtypes(['number'])
+            df = df.drop("sus", axis=1)  # junk
+            print(df)
+            X = np.array(df.iloc[len(df)-20:])
+            X = torch.tensor(X)
+            return X, file_info[1]
 
 
 
@@ -195,7 +217,7 @@ batch_size = 2
 #train_data = TensorDataset(torch.from_numpy(train_x), torch.from_numpy(train_y))
 train_data = dataset
 
-dataloader = DataLoader(train_data, shuffle=True, batch_size=batch_size, drop_last=True)
+dataloader = DataLoader(train_data, shuffle=True, batch_size=batch_size, drop_last=True,pin_memory=True)
 #data_iter = iter(dataloader)
 #data = data_iter.next()
 
@@ -242,9 +264,6 @@ class RNN(nn.Module):
         return out
 
 
-print(features,labels)
-print(features.dtype)
-print(labels.dtype)
 
 num_classes = 2
 num_epochs = 100
@@ -270,10 +289,19 @@ for epoch in range(num_epochs):
     for i, (images, labels) in enumerate(train_loader):
         # origin shape: [N, 1, 28, 28]
         # resized: [N, 28, 28]
+        images = images.to(device)
+        labels = labels.to(device)
+
+        print("images",images.dtype)
+        print("labels",labels.dtype)
+
 
         # Forward pass
         outputs = model(images.float())
-        loss = criterion(outputs.float(), labels.long())
+
+        labels=labels.long()
+
+        loss = criterion(outputs.float(), labels)
 
         # Backward and optimize
         optimizer.zero_grad()
