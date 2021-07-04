@@ -90,7 +90,7 @@ if __name__ == "__main__":
     X = X.to(device)
     X = X.float()
 
-    model = torch.load(r"C:\Users\emill\PycharmProjects\csgoparse\data_analysis/AntiCheat.pt",map_location=torch.device('cpu'))
+    model = torch.load("AntiCheat.pt",map_location=torch.device('cpu'))
     prd = model.predict(X)
     probs = torch.softmax(prd, 1)
-    print("Probability of cheating:", round(probs[0][0].item(), 2), "        Logits:", prd)
+    print("Probability of cheating:", round(1-probs[0][0].item(), 2), "        Logits:", prd)
