@@ -3,3 +3,6 @@ You feed the model 100 ticks before a single kill, and it gives you the probabil
 
 ## Current progress
 First model 80% validation accuracy trained on 1600 kills and tested on 100. (The kills used were very blatant)
+
+## Model
+The Model currently takes in only ViewX, ViewY, X, Y, Z. Size of each kill (100,5)
