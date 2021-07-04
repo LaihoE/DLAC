@@ -76,24 +76,19 @@ class RNN(nn.Module):
 
 
 if __name__ == "__main__":
-    df = pd.read_csv(r"D:\Users\emill\pred\singlekills/48.csv")
+    df = pd.read_csv("Example_kill.csv")
     print(df)
 
-    df = df.select_dtypes(['number'])
-    df = df.drop("sus", axis=1)  # junk
-
+    # Currently only using these 5
     df = df[["X", "Y", "Z", "ViewX", "ViewY"]]
+    # Normalize
     df[["X", "Y", "Z", "ViewX", "ViewY"]] = scaler.fit_transform(df[["X", "Y", "Z", "ViewX", "ViewY"]])
-    # df[["ViewX", "ViewY"]] = scaler.fit_transform(df[["ViewX", "ViewY"]])
 
     X = np.array(df.iloc[len(df) - 100:])
-
     X = X.reshape((1,100,5))
-
     X = torch.tensor(X)
     X = X.to(device)
     X = X.float()
-    print(X.shape)
 
     model = torch.load(r"C:\Users\emill\PycharmProjects\CLIP\canmodel/AntiCheat.pt")
     print(model.predict(X))
