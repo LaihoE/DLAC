@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 
 
 import pandas as pd
@@ -9,7 +9,7 @@ df3 = pd.read_csv("killtest.csv")
 
 print(df3.columns)
 #df3 = df3.set_index('TICK')
-df3 = df3[df3["AttackerName"] == "TeiToN"]
+df3 = df3[df3["AttackerName"] == "Lehtu"]
 
 
 
@@ -17,7 +17,7 @@ victims = [x for x in df3["VictimName"]]
 for x in victims:
     df = pd.read_csv("test.csv")
 
-    df1 = df[df["Name"] == "TeiToN"]
+    df1 = df[df["Name"] == "Lehtu"]
     df2 = df[df["Name"] == x]
     print(x)
     df1 = df1.set_index("TICK")
@@ -34,34 +34,30 @@ for x in victims:
     x_off = []
     y_off = []
 
-    for row in range(len(big)):
-        x1 = big.iloc[row]["X_x"]
-        y1 = big.iloc[row]["Y_x"]
-        z1 = big.iloc[row]["Z_x"]
 
-        x2 = big.iloc[row]["X_y"]
-        y2 = big.iloc[row]["Y_y"]
-        z2 = big.iloc[row]["Z_y"]
+    x1 = big["X_x"]
+    y1 = big["Y_x"]
+    z1 = big["Z_x"]
 
-        xdif = x2 - x1
-        ydif = y2 - y1
-        zdif = z2 - z1
+    x2 = big["X_y"]
+    y2 = big["Y_y"]
+    z2 = big["Z_y"]
 
-        x = atan2(ydif, xdif) * (180 / pi)
-        hypot3D = sqrt(zdif ** 2 + xdif ** 2 + ydif ** 2)
+    xdif = np.array(x2 - x1)
+    ydif = np.array(y2 - y1)
+    zdif = np.array(z2 - z1)
 
-        rightLeft = x
-        upDown = -asin(zdif / hypot3D) * (180 / pi)
+    print(zdif)
+    rightLeft = np.arctan2(ydif, xdif) * (180 / pi)
+    hypot3D = np.sqrt(zdif**2 + xdif**2 + ydif**2)
+    print(hypot3D)
 
-        x_off.append(rightLeft)
-        y_off.append(upDown)
+    upDown = (-np.arcsin(zdif / hypot3D)) * (180 / pi)
 
-    big["X_Off_By_Degrees"] = x_off
-    big["Y_Off_By_Degrees"] = y_off
+    big["X_Off_By_Degrees"] = rightLeft - big["ViewX"]
+    big["Y_Off_By_Degrees"] = upDown - big["ViewY"]
 
-    big.to_csv(f"meme{x}.csv")
-
-
+    big.to_csv(f"nptest.csv")
 
 """# drop dupes
 df2 = df2.drop_duplicates()
