@@ -145,7 +145,7 @@ class Killparser():
 
 
 
-            big = df1.merge(df2, on='TICK')
+            big = df1.merge(df2)
             enormous.append(big)
 
         enormous[1].to_csv("first.csv")
@@ -200,7 +200,9 @@ class Killparser():
 
         df1 = big
         df2 = pd.read_csv(killfile)
-
+        print("BEFORE",df2)
+        df2 = df2[df2["AttackerSteamId"] == int(steamid)]
+        print("AFTER",df2)
         for cnt, x in enumerate(range(len(df2))):
             # Get the next kill and append to list
             mintick = min(df2["TICK"])
@@ -227,7 +229,7 @@ def main(json_name, steamid):
     :return:
     """
     datamover = Killparser()
-    datamover.read_json(f"C:/Users/emill/PycharmProjects/csgoparse/128dirty/{json_name}")
+    datamover.read_json(f"D:/Users/emill/main_cheater_folder/s/a/{json_name}")
     datamover.get_pos_player(f"{steamid}",f"D:/Users/emill/csgocheaters/games/")
     datamover.get_kills_csv(r'D:\Users\emill\csgocheaters\kills/')
 
@@ -240,16 +242,16 @@ def main(json_name, steamid):
 
 def get_names(json_name):
     datamover = Killparser()
-    datamover.read_json(f"C:/Users/emill/PycharmProjects/csgoparse/128dirty/{json_name}")
+    datamover.read_json(f"D:/Users/emill/main_cheater_folder/s/a/{json_name}")
     players = datamover.get_players_ids()
     return players
 
 
 import os
-for cnt,filename in enumerate(os.listdir(r'C:\Users\emill\PycharmProjects\csgoparse\128dirty/')):
-    if cnt >4:
+for cnt,filename in enumerate(os.listdir(r'D:/Users/emill/main_cheater_folder/s/a/')):
+    if filename.endswith(".json"):
         steamid = 234
-        print(filename,round(cnt/len(os.listdir(r'C:\Users\emill\PycharmProjects\csgoparse\128dirty/')),0))
+        print(filename,round(cnt/len(os.listdir(r'D:\Users\emill\main_cheater_folder\s\a/')),0))
         players_this_game = get_names(filename)
         just_name = [x[0] for x in players_this_game]
 
