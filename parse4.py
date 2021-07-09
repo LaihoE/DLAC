@@ -1,11 +1,13 @@
 import json
+import time
+
 import pandas as pd
 import csv
 import numpy as np
 from math import pi
 
 
-class Killparser():
+class Killparser:
     """
     PARSES TICKS LEADING UP TO A KILL AND SPLITS THEM IN CSVs
     """
@@ -113,111 +115,82 @@ class Killparser():
         df1 = pd.read_csv(mainfile)
         df2 = pd.read_csv(killfile)
 
-        df3 = df2[df2["AttackerSteamId"] == int(steamid)]
-        victims = [x for x in df3["VictimSteamId"]]
-        # Remove duplicates
-        victims = set(victims)
-        victims = list(victims)
-        for p in victims:
-            # Read main file with all ticks
-            df = pd.read_csv(mainfile)
-            print(df[df["SteamId"] == int(steamid)], "==", steamid)
-
-            df1 = df[df["SteamId"] == int(steamid)]
-            # Only the victims frames
-            print(df[df["SteamId"]== p],"==",p)
-            df2 = df[df["SteamId"] == p]
-
-            #df1 = df1.set_index("TICK")
-
-            df2 = df2[["TICK", "X", "Y", "Z"]]
-            #df2 = df2.set_index("TICK")
-
-            print(df2)
-
-
-
-
-
-            # Convert 0-360 range to -180 - 180 range for easier trig
-            df1['ViewX'] = (df1['ViewX'] + 180) % 360 - 180
-            df1['ViewY'] = (df1['ViewY'] + 180) % 360 - 180
-
-
-
-            big = df1.merge(df2)
-            enormous.append(big)
-
-        enormous[1].to_csv("first.csv")
-        enormous[2].to_csv("second.csv")
-        for cnt,i in enumerate(enormous):
-            if cnt != 0:
-                enormous[0].append(i)
-
-        print("CHONKY ALERT")
-        print(enormous[0])
-        print("CHONKY ALERT")
-
-
-        print(enormous)
-
-        big = enormous[0]
-
-        x1 = big["X_x"]
-        y1 = big["Y_x"]
-        z1 = big["Z_x"]
-
-        x2 = big["X_y"]
-        y2 = big["Y_y"]
-        z2 = big["Z_y"]
-
-        xdif = np.array(abs(x2 - x1))
-        ydif = np.array(abs(y2 - y1))
-        zdif = np.array(abs(z2 - z1))
-
-
-
-
-
-        rightLeft = np.arctan2(ydif, xdif) * (180 / pi)
-        hypot3D = np.sqrt(zdif ** 2 + xdif ** 2 + ydif ** 2)
-        upDown = (-np.arcsin(zdif / hypot3D)) * (180 / pi)
-
-
-
-
-        big["X_Off_By_Degrees"] = rightLeft - big["ViewX"]
-        big["Y_Off_By_Degrees"] = upDown - big["ViewY"]
-        big.to_csv("nextpls.csv")
-
-        #df2 = df2[df2["AttackerSteamId"] == int(steamid)]
-
-        # drop dupes
-
-        #df2 = df2.drop_duplicates()
         n_files = len([name for name in os.listdir(r'D:\Users\emill\csgocheaters\singlekills/')])
-        print("n_files",n_files)
+        cnt = 0
+        suspect = int(steamid)
+        for inx in range(len(df2)):
+            single_kill = df2.iloc[inx]
 
-        df1 = big
-        df2 = pd.read_csv(killfile)
-        print("BEFORE",df2)
-        df2 = df2[df2["AttackerSteamId"] == int(steamid)]
-        print("AFTER",df2)
-        for cnt, x in enumerate(range(len(df2))):
-            # Get the next kill and append to list
-            mintick = min(df2["TICK"])
-            out_df = df1[df1['TICK'] <= mintick]
+            if single_kill["AttackerSteamId"] == suspect:
+                victim_this_kill = single_kill["VictimSteamId"]
+                tick_this_kill = single_kill["TICK"]
 
-            if len(out_df)>0:
-                retruning_list.append(out_df)
-                if write_to_csv == True:
-                    out_df.to_csv(f"{out_folder}/{n_files + cnt}.csv")
+                df_victim = df1[df1["SteamId"] == victim_this_kill]
+                df_victim = df_victim[df_victim["TICK"] <= tick_this_kill]
+                df_victim = df_victim[["X", "Y", "Z", "SteamId", "TICK", "Name"]]
 
-            # Cut off kill from big dfs
-            df1 = df1[df1['TICK'] > mintick]
-            df2 = df2[df2['TICK'] > mintick]
+                df_killer = df1[df1["SteamId"] == np.int(76561198170786499)]
+                joined_df = df_killer.merge(df_victim, how='left', on="TICK")
 
-        return retruning_list
+                joined_df = joined_df[joined_df["TICK"] < tick_this_kill]
+                joined_df = joined_df.fillna(method='ffill')
+                # Trig
+                joined_df['ViewX'] = (joined_df['ViewX'] + 180) % 360 - 180
+                joined_df['ViewY'] = (joined_df['ViewY'] + 180) % 360 - 180
+
+                x1 = joined_df["X_x"]
+                y1 = joined_df["Y_x"]
+                z1 = joined_df["Z_x"]
+
+                x2 = joined_df["X_y"]
+                y2 = joined_df["Y_y"]
+                z2 = joined_df["Z_y"]
+
+                xdif = np.array(x2 - x1)
+                ydif = np.array(y2 - y1)
+                zdif = np.array(z2 - z1)
+
+                rightLeft = np.arctan2(ydif, xdif) * (180 / pi)
+                hypot3D = np.sqrt(zdif ** 2 + xdif ** 2 + ydif ** 2)
+                upDown = (-np.arcsin(zdif / hypot3D)) * (180 / pi)
+
+                joined_df["X_Off_By_Degrees"] = rightLeft - joined_df["ViewX"]
+                joined_df["Y_Off_By_Degrees"] = upDown - joined_df["ViewY"]
+
+                single_kill = single_kill.rename(
+                    {"AttackerViewX": "ViewX", "AttackerViewY": "ViewY", "VictimX": "X_y", "VictimY": "Y_y",
+                     "VictimZ": "Z_y", "AttackerX": "X_x", "AttackerY": "Y_x", "AttackerZ": "Z_x"})
+                last_joining_row = single_kill[["X_y", "Y_y", "Z_y", "X_x", "Y_x", "Z_x", "ViewX", "ViewY"]]
+
+                # Also do trig for the last row
+                last_joining_row['ViewX'] = (last_joining_row['ViewX'] + 180) % 360 - 180
+                last_joining_row['ViewY'] = (last_joining_row['ViewY'] + 180) % 360 - 180
+
+                x1 = last_joining_row["X_x"]
+                y1 = last_joining_row["Y_x"]
+                z1 = last_joining_row["Z_x"]
+
+                x2 = last_joining_row["X_y"]
+                y2 = last_joining_row["Y_y"]
+                z2 = last_joining_row["Z_y"]
+
+                xdif = np.array(x2 - x1)
+                ydif = np.array(y2 - y1)
+                zdif = np.array(z2 - z1)
+
+                rightLeft = np.arctan2(ydif, xdif) * (180 / pi)
+                hypot3D = np.sqrt(zdif ** 2 + xdif ** 2 + ydif ** 2)
+                upDown = (-np.arcsin(zdif / hypot3D)) * (180 / pi)
+
+                last_joining_row["X_Off_By_Degrees"] = rightLeft - last_joining_row["ViewX"]
+                last_joining_row["Y_Off_By_Degrees"] = upDown - last_joining_row["ViewY"]
+
+                joined_df = joined_df.append(last_joining_row)
+                joined_df = joined_df.fillna(method='ffill')
+                cnt += 1
+                if len(joined_df)>3000:
+                    joined_df = joined_df.iloc[len(joined_df)-3000:]
+                joined_df.to_csv(f"{out_folder}/{n_files + cnt}.csv")
 
 
 def main(json_name, steamid):
@@ -263,7 +236,6 @@ for cnt,filename in enumerate(os.listdir(r'D:/Users/emill/main_cheater_folder/s/
                 if i in just_name:
                     steamid = [x[1] for x in players_this_game if i == x[0]][0]
                     main(json_name, steamid)
-
 
 
 # Clean games
