@@ -1,9 +1,13 @@
 import json
+import time
+
 import pandas as pd
 import csv
+import numpy as np
+from math import pi
+import time
 
-
-class Killparser():
+class Killparser:
     """
     PARSES TICKS LEADING UP TO A KILL AND SPLITS THEM IN CSVs
     """
@@ -49,7 +53,25 @@ class Killparser():
                                  'IsScoped', 'IsWalking', 'Money', 'Name', 'SteamId', 'TICK',
                                  'TotalUtility', 'ViewX', 'ViewY', 'X', 'Y', 'Z'])
 
+        # Get enemy ids
+        t_players = []
+        ct_players = []
+        for p in range(5):
+            t_player = self.x["GameRounds"][12]["Frames"][3]["T"]["Players"][p]['SteamId']
+            t_players.append(t_player)
+            ct_player = self.x["GameRounds"][12]["Frames"][3]["CT"]["Players"][p]['SteamId']
+            ct_players.append(ct_player)
 
+        enemies = []
+        if int(steamid) in ct_players:
+            enemies = t_players
+            print("SUSPECT IS CT")
+        elif int(steamid) in t_players:
+            enemies = ct_players
+            print("SUSPECT IS T")
+
+
+        # Get every tick (could be optimized by only getting the correct ticks)
         for rounds in range(self.n_rounds):
             for frames in range(len(self.x["GameRounds"][rounds]["Frames"])):
                 for team in range(2):
@@ -59,7 +81,8 @@ class Killparser():
                         else:
                             team_index = "CT"
                         try:
-                            if str(self.x["GameRounds"][rounds]["Frames"][frames][team_index]["Players"][player]["SteamId"]) == steamid:
+                            # print(self.x["GameRounds"][rounds]["Frames"][frames][team_index]["Players"][player]["SteamId"]," IN  ",enemies)
+                            if self.x["GameRounds"][rounds]["Frames"][frames][team_index]["Players"][player]["SteamId"] in enemies:
 
                                 dikt = self.x["GameRounds"][rounds]["Frames"][frames][team_index]["Players"][player]
                                 dikt["TICK"] = self.x["GameRounds"][rounds]["Frames"][frames]["Tick"]
@@ -104,32 +127,90 @@ class Killparser():
         :param attacker_name:
         :return: List of dfs consisting of ticks up to the kill
         """
-        retruning_list = []
 
         df1 = pd.read_csv(mainfile)
         df2 = pd.read_csv(killfile)
-        df2 = df2[df2["AttackerSteamId"] == int(steamid)]
-        # drop dupes
 
-        df2 = df2.drop_duplicates()
-        n_files = len([name for name in os.listdir(r'D:\Users\emill\csgocheaters\singlekills/')])
-        print("n_files",n_files)
+        n_files = len([name for name in os.listdir(r'D:\Users\emill\csgocheaters\enemy/')])
+        cnt = 0
 
-        for cnt, x in enumerate(range(len(df2))):
-            # Get the next kill and append to list
-            mintick = min(df2["TICK"])
-            out_df = df1[df1['TICK'] <= mintick]
+        suspect = steamid
 
-            if len(out_df)>0:
-                retruning_list.append(out_df)
-                if write_to_csv == True:
-                    out_df.to_csv(f"{out_folder}/{n_files + cnt}.csv")
+        for inx in range(len(df2)):
+            single_kill = df2.iloc[inx]
 
-            # Cut off kill from big dfs
-            df1 = df1[df1['TICK'] > mintick]
-            df2 = df2[df2['TICK'] > mintick]
+            if single_kill["AttackerSteamId"] == suspect:
+                victim_this_kill = single_kill["VictimSteamId"]
+                tick_this_kill = single_kill["TICK"]
 
-        return retruning_list
+                df_victim = df1[df1["SteamId"] == victim_this_kill]
+                df_victim = df_victim[df_victim["TICK"] <= tick_this_kill]
+                # df_victim = df_victim[["X", "Y", "Z", "SteamId", "TICK", "Name"]]
+
+                df_killer = df1[df1["SteamId"] == np.int(suspect)]
+                joined_df = df_killer.merge(df_victim, how='left', on="TICK")
+
+                joined_df = joined_df[joined_df["TICK"] < tick_this_kill]
+                joined_df = joined_df.fillna(method='ffill')
+                # Trig
+                """joined_df['ViewX'] = (joined_df['ViewX_x'] + 180) % 360 - 180
+                joined_df['ViewY'] = (joined_df['ViewY_x'] + 180) % 360 - 180
+
+                x1 = joined_df["X_x"]
+                y1 = joined_df["Y_x"]
+                z1 = joined_df["Z_x"]
+
+                x2 = joined_df["X_y"]
+                y2 = joined_df["Y_y"]
+                z2 = joined_df["Z_y"]
+
+                xdif = np.array(x2 - x1)
+                ydif = np.array(y2 - y1)
+                zdif = np.array(z2 - z1)
+
+                rightLeft = np.arctan2(ydif, xdif) * (180 / pi)
+                hypot3D = np.sqrt(zdif ** 2 + xdif ** 2 + ydif ** 2)
+                upDown = (-np.arcsin(zdif / hypot3D)) * (180 / pi)
+
+                joined_df["X_Off_By_Degrees"] = rightLeft - joined_df["ViewX_x"]
+                joined_df["Y_Off_By_Degrees"] = upDown - joined_df["ViewY_x"]
+
+                single_kill = single_kill.rename(
+                    {"AttackerViewX": "ViewX", "AttackerViewY": "ViewY", "VictimX": "X_y", "VictimY": "Y_y",
+                     "VictimZ": "Z_y", "AttackerX": "X_x", "AttackerY": "Y_x", "AttackerZ": "Z_x"})
+                # last_joining_row = single_kill[["X_y", "Y_y", "Z_y", "X_x", "Y_x", "Z_x", "ViewX", "ViewY"]]
+
+                # Also do trig for the last row
+                last_joining_row = single_kill
+                last_joining_row['ViewX_x'] = (last_joining_row['ViewX_x'] + 180) % 360 - 180
+                last_joining_row['ViewY_x'] = (last_joining_row['ViewY_x'] + 180) % 360 - 180
+
+                x1 = last_joining_row["X_x"]
+                y1 = last_joining_row["Y_x"]
+                z1 = last_joining_row["Z_x"]
+
+                x2 = last_joining_row["X_y"]
+                y2 = last_joining_row["Y_y"]
+                z2 = last_joining_row["Z_y"]
+
+                xdif = np.array(x2 - x1)
+                ydif = np.array(y2 - y1)
+                zdif = np.array(z2 - z1)
+
+                rightLeft = np.arctan2(ydif, xdif) * (180 / pi)
+                hypot3D = np.sqrt(zdif ** 2 + xdif ** 2 + ydif ** 2)
+                upDown = (-np.arcsin(zdif / hypot3D)) * (180 / pi)
+
+                last_joining_row["X_Off_By_Degrees"] = rightLeft - last_joining_row["ViewX"]
+                last_joining_row["Y_Off_By_Degrees"] = upDown - last_joining_row["ViewY"]"""
+
+                joined_df = joined_df.append(single_kill)
+                joined_df = joined_df.fillna(method='ffill')
+                cnt += 1
+                if len(joined_df) > 3000:
+                    joined_df = joined_df.iloc[len(joined_df) - 3000:]
+                joined_df.to_csv(f"{out_folder}/{n_files + cnt}.csv")
+
 
 
 def main(json_name, steamid):
@@ -140,42 +221,54 @@ def main(json_name, steamid):
     :param steamid:
     :return:
     """
+    started = time.time()
+
     datamover = Killparser()
-    datamover.read_json(f"C:/Users/emill/PycharmProjects/csgoparse/128t-hackers/{json_name}")
-    datamover.get_pos_player(f"{steamid}",f"D:/Users/emill/csgocheaters/games/")
+    print("Killparser",time.time()-started)
+    datamover.read_json(f"D:/Users/emill/shitter/a/{json_name}")
+    print("read_json", time.time() - started)
+    try:
+        datamover.get_pos_player(f"{steamid}",f"D:/Users/emill/csgocheaters/games/")
+    except Exception as e:
+        print("FAILED ON:",e)
+    print("get_pos_player", time.time() - started)
     datamover.get_kills_csv(r'D:\Users\emill\csgocheaters\kills/')
+    print("get_kills_csv", time.time() - started)
 
     json_name_without_end = json_name.replace(".json","")
     mainfile = f'D:/Users/emill/csgocheaters/games/{json_name_without_end}.csv'
     killfile = f'D:/Users/emill/csgocheaters/kills/{json_name_without_end}.csv'
-    out_folder = r"D:\Users\emill\csgocheaters\singlekills/"
+    out_folder = r"D:\Users\emill\csgocheaters\enemy/"
     datamover.split_df_by_kill(mainfile, killfile, steamid, out_folder, write_to_csv=True)
+    print("split_df_by_kill", time.time() - started)
 
 
 def get_names(json_name):
     datamover = Killparser()
-    datamover.read_json(f"C:/Users/emill/PycharmProjects/csgoparse/128t-hackers/{json_name}")
+    datamover.read_json(f"D:/Users/emill/shitter/a/{json_name}")
     players = datamover.get_players_ids()
     return players
 
+
 import os
-for cnt,filename in enumerate(os.listdir(r'C:/Users/emill/PycharmProjects/csgoparse/128t-hackers/')):
-    steamid = 234
-    print(filename,round(cnt/len(os.listdir(r'C:/Users/emill/PycharmProjects/csgoparse/128t-hackers/')),0))
-    players_this_game = get_names(filename)
-    just_name = [x[0] for x in players_this_game]
+for cnt,filename in enumerate(os.listdir(r'D:/Users/emill/shitter/a')):
+    with open('parsed_names.csv','a',newline='\n')as f:
+        thewriter = csv.writer(f)
+        thewriter.writerow([filename])
+    if filename.endswith(".json"):
+        steamid = 234
+        print(filename,round(cnt/len(os.listdir(r'D:\Users\emill\shitter/a')),0))
+        players_this_game = get_names(filename)
+        just_name = [x[0] for x in players_this_game]
 
-    if filename.endswith('.json'):
-        json_name = filename
-        df = pd.read_csv("log (3).csv")
+        if filename.endswith('.json'):
+            json_name = filename
+            df = pd.read_csv("log (3).csv")
 
-        for i in df["name"]:
-            if i in just_name:
-                steamid = [x[1] for x in players_this_game if i==x[0]][0]
-                try:
+            for i in df["name"]:
+                if i in just_name:
+                    steamid = [x[1] for x in players_this_game if i == x[0]][0]
                     main(json_name, steamid)
-                except Exception as e:
-                    print(e)
 
 
 # Clean games
