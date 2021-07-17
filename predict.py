@@ -50,41 +50,17 @@ class GRUModel(nn.Module):
         out = self.fc(out)
         return out
 
-    def predict(self,x):
-        model.eval()
-        with torch.no_grad():
-            # Set initial hidden states (and cell states for LSTM)
-            h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device)
-            # c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device)
 
-            # x: (n, 28, 28), h0: (2, n, 128)
+X = np.load("prd.npy")
+print(X.shape)
+X = torch.tensor(X)
+X = X.to(device)
+X = X.float()
 
-            # Forward propagate RNN
-            out, _ = self.rnn(x, h0)
-            # or:
-            # out, _ = self.lstm(x, (h0,c0))
+model = torch.load(r"C:\Users\emill\PycharmProjects\CLIP\canmodel/AntiCheat.pt")
+prd = model.forward(X)
+probs = torch.softmax(prd,1)
 
-            # out: tensor of shape (batch_size, seq_length, hidden_size)
-            # out: (n, 28, 128)
-
-            # Decode the hidden state of the last time step
-            out = out[:, -1, :]
-            # out: (n, 128)
-
-            out = self.fc(out)
-            # out: (n, 10)
-            return out
-
-
-if __name__ == "__main__":
-    X = np.load("prd.npy")
-    print(X.shape)
-    X = torch.tensor(X)
-    X = X.to(device)
-    X = X.float()
-
-    model = torch.load(r"C:\Users\emill\PycharmProjects\CLIP\canmodel/AntiCheat.pt",map_location=torch.device('cpu'))
-    prd = model.forward(X)
-    probs = torch.softmax(prd,1)
-    for i in range(500):
-        print("Probability of cheating:",round(1-probs[i][0].item(),2))
+# Each kill in numpy array
+for i in range(X.shape[1]):
+    print("Cheating:",round(1-probs[i][0].item(),2)*100,"%")
