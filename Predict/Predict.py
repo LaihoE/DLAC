@@ -27,7 +27,7 @@ class GRUModel(nn.Module):
 
 
 """
-Model predict the probability of cheating for every shot that hits an enemy
+Model predicts the probability of cheating for every shot that hits an enemy
 """
 if __name__ == "__main__":
     # Shape expected is (n,256,24). Example has 20 shots so the shape is (20,256,24)
