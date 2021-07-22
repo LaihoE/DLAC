@@ -2,13 +2,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-is_cuda = torch.cuda.is_available()
-if is_cuda:
-    device = torch.device("cuda")
-else:
-    device = torch.device("cpu")
-print(f"Using: {device}")
-
 
 class GRUModel(nn.Module):
     def __init__(self, input_dim, hidden_dim, layer_dim, output_dim, dropout_prob):
@@ -30,6 +23,14 @@ class GRUModel(nn.Module):
 Model predicts the probability of cheating for every shot that hits an enemy
 """
 if __name__ == "__main__":
+    # Check for GPU
+    is_cuda = torch.cuda.is_available()
+    if is_cuda:
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+    print(f"Using: {device}")
+
     # Shape expected is (n,256,24). Example has 20 shots so the shape is (20,256,24)
     X = np.load("example.npy")
     X = torch.tensor(X).to(device).float()
@@ -44,6 +45,9 @@ if __name__ == "__main__":
     for shot in range(X.shape[0]):
         probability = probs[shot][1].item()
 
-        # The probabilities are way too confident. For example use 95 % as threshold for a cheating shot
+        # The probabilities are way too confident. For example use 95 % as threshold for a cheating shot.
+        # You can come up with any rule you want, for example if average is over X% or if top 5 predictions are over
+        # X% or even create a ML model on top of these
+
         if probability > 0.95:
             print("Shot number:", shot, "Cheating:", round(probability, 2)*100, "%")
