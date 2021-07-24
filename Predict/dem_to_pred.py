@@ -4,6 +4,7 @@ import torch.nn as nn
 import subprocess as sp
 import sys
 import math
+import numpy as np
 
 is_cuda = torch.cuda.is_available()
 if is_cuda:
@@ -38,7 +39,9 @@ class Model:
         num_samples = len(self.df)
         data = self.df.to_numpy()
         X = data[:, 1:]
-        features = [x for x in range(24)]
+        y = data[:, 0]
+
+        features = [x for x in range(27)]
         num_features = len(features)
         idxs = []
         for i in range(X.shape[1]):
@@ -46,38 +49,47 @@ class Model:
                 continue
             if (i % num_features) in features:
                 idxs.append(i)
+
         X = X.reshape(-1, 256, num_features)
-        return X
+        return X,y
 
     def predict(self,batch_size):
 
-        X = self.extract_features()
-        #X = X[0,:,:]
+        X,y = self.extract_features()
+        name = X[:,:,0]
+        id = X[:,:,2]
+        tick = X[:,:,1]
+
+        # Drop the id and tick since it's not fed into the model
+        X = X[:,:,3:]
         # Shape expected is (n,256,24). Example has 20 shots so the shape is (20,256,24)
         print(f"Shape: {X.shape}")
-
+        X = X.astype(np.float32)
         # Deep learning model. Remove map_location if GPU-enabled PyTorch. Enabling GPU speeds up predictions, but may
         # not be needed if predicting small amounts of games
-        model = torch.load("AntiCheat2.pt",map_location=torch.device('cpu'))
+        model = torch.load("AntiCheat.pt",map_location=torch.device('cpu'))
 
         # rounded up n shots / batch size
         total_batches = math.ceil(X.shape[0] / batch_size)
-        print(total_batches)
+
         for inx in range(total_batches):
             x = X[inx * batch_size:inx * batch_size + batch_size, :, :]
+            ids = id[inx * batch_size:inx * batch_size + batch_size,0]
+            ticks = tick[inx * batch_size:inx * batch_size + batch_size,:]
+            names = name[inx * batch_size:inx * batch_size + batch_size]
+            #print(names)
             x = torch.tensor(x).to(device).float()
             prd = model.forward(x)
             probs = torch.softmax(prd, 1)
             # Each shot in batch
             for shot in range(x.shape[0]):
                 probability = probs[shot][1].item()
-
                 # The probabilities are way too confident. For example use 95 % as threshold for a cheating shot.
                 # You can come up with any rule you want, for example if average is over X% or if top 5 predictions are over
                 # X% or even create a ML model on top of these
 
-                if probability > 0.2:
-                    print("Shot number:", shot, "Cheating:", round(probability, 2)*100, "%")
+                if probability > 0.95:
+                    print("Name",names[shot][0],"SteamID:", str(ids[shot]),"Tick",ticks[shot,0], "Cheating:", round(probability, 2)*100, "%")
 
 
 if __name__ == "__main__":
@@ -86,8 +98,6 @@ if __name__ == "__main__":
     res = pipe.communicate()
     for line in res[0].decode(encoding='utf-8').split('\n'):
         print(line)
-    model = Model("./parsed_games/data.csv")
+    model = Model("data/data.csv")
 
-    # Make sure you can fit the data on RAM or VRAM if using GPU
-    # each shot is around 50 000 bytes
     model.predict(batch_size=100)
