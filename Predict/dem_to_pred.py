@@ -2,9 +2,10 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import subprocess as sp
-import sys
 import math
 import numpy as np
+import joblib
+
 
 is_cuda = torch.cuda.is_available()
 if is_cuda:
@@ -32,8 +33,16 @@ class GRUModel(nn.Module):
 
 class Model:
     def __init__(self,df_path):
+        my_scaler = joblib.load(r'C:\Users\emill/scaler.gz')
         self.df = pd.read_csv(df_path,header=None)
+        print(self.df)
+        self.df = self.df.values  # returns a numpy array
+        print(self.df)
+        self.df = my_scaler.transform(self.df)
+        self.df = pd.DataFrame(self.df)
+        print(self.df)
         self.X = None
+
 
     def extract_features(self):
         num_samples = len(self.df)
@@ -41,7 +50,7 @@ class Model:
         X = data[:, 1:]
         y = data[:, 0]
 
-        features = [x for x in range(27)]
+        features = [x for x in range(24)]
         num_features = len(features)
         idxs = []
         for i in range(X.shape[1]):
@@ -56,27 +65,28 @@ class Model:
     def predict(self,batch_size):
 
         X,y = self.extract_features()
-        name = X[:,:,0]
-        id = X[:,:,2]
-        tick = X[:,:,1]
+        #name = X[:,:,0]
+        #id = X[:,:,2]
+        #tick = X[:,:,1]
 
         # Drop the id and tick since it's not fed into the model
-        X = X[:,:,3:]
+        #X = X[:,:,3:]
         # Shape expected is (n,256,24). Example has 20 shots so the shape is (20,256,24)
         print(f"Shape: {X.shape}")
+        print(X[0])
         X = X.astype(np.float32)
         # Deep learning model. Remove map_location if GPU-enabled PyTorch. Enabling GPU speeds up predictions, but may
         # not be needed if predicting small amounts of games
-        model = torch.load("AntiCheat.pt",map_location=torch.device('cpu'))
+        model = torch.load("C:/Users/emill/PycharmProjects/CLIP/canmodel/grus/AntiCheat14.pt",map_location=torch.device('cpu'))
 
         # rounded up n shots / batch size
         total_batches = math.ceil(X.shape[0] / batch_size)
 
         for inx in range(total_batches):
             x = X[inx * batch_size:inx * batch_size + batch_size, :, :]
-            ids = id[inx * batch_size:inx * batch_size + batch_size,0]
-            ticks = tick[inx * batch_size:inx * batch_size + batch_size,:]
-            names = name[inx * batch_size:inx * batch_size + batch_size]
+            #ids = id[inx * batch_size:inx * batch_size + batch_size,0]
+            #ticks = tick[inx * batch_size:inx * batch_size + batch_size,:]
+            #names = name[inx * batch_size:inx * batch_size + batch_size]
             #print(names)
             x = torch.tensor(x).to(device).float()
             prd = model.forward(x)
@@ -88,16 +98,16 @@ class Model:
                 # You can come up with any rule you want, for example if average is over X% or if top 5 predictions are over
                 # X% or even create a ML model on top of these
 
-                if probability > 0.95:
-                    print("Name",names[shot][0],"SteamID:", str(ids[shot]),"Tick",ticks[shot,0], "Cheating:", round(probability, 2)*100, "%")
+                if probability > 0.95:                                        # sampled 64-tick so need to *2 if 128 server
+                    #print("Name",names[shot][0],"SteamID:", str(ids[shot]),"Tick",(ticks[shot,0]* 2), "Cheating:", round(probability, 2)*100, "%")
+                    print("Cheating:", round(probability, 2)*100, "%")
 
 
 if __name__ == "__main__":
-    dem_folder = './a/'
+    dem_folder = './demos2/'
     pipe = sp.Popen(f'go run parser.go {dem_folder}', shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
     res = pipe.communicate()
     for line in res[0].decode(encoding='utf-8').split('\n'):
         print(line)
     model = Model("data/data.csv")
-
     model.predict(batch_size=100)
