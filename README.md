@@ -1,12 +1,20 @@
-# Mini version of VacNet
-You feed the model ticks leading up to a single kill, and it gives you the probability of the kill being legit. 
+# Machine Learning AntiCheat For CSGO
+You input the directory where your .dem files are, and the model will give you predictions of every shot that hits an enemy during the game.  
+The code outputs a CSV files with the predictions.
 
-## Got data?
-If you happen to have demos (legit or cheating) pls share. CSGO saves demos to some extent in the folder:  
-Counter-Strike Global Offensive\csgo\replays
+## Quickstart Guide
+Currently only for demos that are recorded at 64-tick (NOT the same as the servers tickrate, for example normal MM demos are recorded at 32-tick).
+
+Predict.py is currently the main file, found in the supervised folder. Just change the demo_folder to the folder where your .dem files are, and the code will output a CSV file in current directory with output like:  
+Probability, Suspect Name, Suspect SteamId, Tick of the shot, .dem file name
 
 ## Current progress
-Trained on 87k kills with accuracy 98 % on blatant cheaters (most of cheaters are spinbotting).
+Roughly 1/10 of the predictions are false positives at a 90% confidence threshold. Threshold is easy to change to your own liking. The model should be used more as a type of filter rather than a judge. **Should by no means be used to automatically ban people without human supervision!**  
+Your best bet is to follow multiple games of the same player and take some type of average of them.
 
 ## Model
-GRU that takes in data in the form of (1,256,4) 256 timesteps and 4 variables. (Changes often)
+Catboost model (similar to XGBoost), deep learning doesn't seem to beat classical ML models at this task at < 500 000 datapoints (shots)
+
+## Credits
+Demoinfocs-golang is the underlying parser used for parsing the demos, found at: https://github.com/markus-wa/demoinfocs-golang.  
+87andrewh has written the majority of the specific parser used, found at: https://github.com/87andrewh/DeepAimDetector/blob/master/parser/to_csv.go
