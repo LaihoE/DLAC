@@ -1,6 +1,6 @@
 # Machine Learning AntiCheat For CSGO
 You input the directory where your .dem files are, and the model will give you predictions of every shot that hits an enemy during the game.  
-The code outputs a CSV files with the predictions.
+The code outputs a CSV file with the predictions.
 
 ## Quickstart Guide
 Currently only for demos that are recorded at 64-tick (NOT the same as the servers tickrate, for example normal MM demos are recorded at 32-tick).
