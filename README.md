@@ -3,6 +3,8 @@ You input the directory where your .dem files are, and the model will give you p
 The code outputs a CSV file with the predictions.
 
 ## Quickstart Guide
+You need to have Golang and clone Demoinfocs-golang (check how to setup from demoinfocs repo), found at: https://github.com/markus-wa/demoinfocs-golang
+
 Currently only for demos that are recorded at 64-tick (NOT the same as the servers tickrate, for example normal MM demos are recorded at 32-tick).
 
 Predict.py is currently the main file, found in the supervised folder. Just change the demo_folder to the folder where your .dem files are, and the code will output a CSV file in current directory with output like:  
