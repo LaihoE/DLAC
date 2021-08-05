@@ -1,40 +1,34 @@
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
-import pandas as pd
-import os
-import os
-from math import pi
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import MinMaxScaler
-
-
+from ignite.metrics import Precision
 
 class DemoDataset(Dataset):
     def __init__(self):
-        files = os.listdir("c:/data/csgo/clean")
-        self.files = [(i, i[0]) for i in files]
+        self.x = np.load("C:/Users/emill/PycharmProjects/CLIP/canmodel/X.npy")
+        self.y = np.load("C:/Users/emill/PycharmProjects/CLIP/canmodel/y.npy")
+        self.n_samples = len(self.y)
+        print(self.y)
+        print(self.x)
 
     def __getitem__(self, index):
-        data = self.files[index]
-        X = np.load(f"C:/data/csgo/clean/{data[0]}")
-        if data[1] == "c":
-            y = 0
-        else:
-            y = 1
-        return X,y
+        return  self.x[index], self.y[index]
+
 
     def __len__(self):
-        return len(self.files)
+        return self.n_samples
 
 
 
 class DemoDataset2(Dataset):
     def __init__(self):
+        #self.x = np.load("C:/Users/emill/PycharmProjects/CLIP/canmodel/x_test.npy")
+        #self.y = np.load("C:/Users/emill/PycharmProjects/CLIP/canmodel/y_test.npy")
 
-        self.x = np.load("C:/Users/emill/PycharmProjects/CLIP/canmodel/x_tt.npy")
-        self.y = np.load("C:/Users/emill/PycharmProjects/CLIP/canmodel/y_tt.npy")
+        self.x = np.load("C:/Users/emill/PycharmProjects/CLIP/canmodel/x_test.npy")
+        self.y = np.load("C:/Users/emill/PycharmProjects/CLIP/canmodel/y_test.npy")
 
         self.n_samples = len(self.y)
         print(self.y)
@@ -45,6 +39,7 @@ class DemoDataset2(Dataset):
 
     def __len__(self):
         return self.n_samples
+
 
 
 def check_accuracy(loader, model):
@@ -65,7 +60,6 @@ def check_accuracy(loader, model):
             scores = model(x)
             #print(scores)
             _, predictions = scores.max(1)
-            print(scores)
             num_correct += (predictions == y).sum()
             num_samples += predictions.size(0)
     model.train()
@@ -102,12 +96,10 @@ class GRUModel(nn.Module):
 
         # Convert the final state to our desired output shape (batch_size, output_dim)
         out = self.fc(out)
-
         return out
 
 
 if __name__ == "__main__":
-    scaler = MinMaxScaler()
 
     is_cuda = torch.cuda.is_available()
     if is_cuda:
@@ -115,36 +107,35 @@ if __name__ == "__main__":
     else:
         device = torch.device("cpu")
     print(device)
-
+    scaler = torch.cuda.amp.GradScaler()
 
     dataset = DemoDataset()
     dataset_testing = DemoDataset2()
 
     num_classes = 2
     num_epochs = 30
-    batch_size = 256
+    batch_size = 512
     learning_rate = 0.001
 
     input_size = 24
     sequence_length = 256
-    hidden_size = 256
-    num_layers = 2
+    hidden_size = 128
+    num_layers = 1
 
     model = GRUModel(input_size, hidden_size, num_layers, num_classes,0.2).to(device)
 
-    criterion = nn.BCEWithLogitsLoss()
+    criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
     train_loader = torch.utils.data.DataLoader(dataset=dataset,
                                                batch_size=batch_size,
                                                shuffle=True,
-                                               num_workers=8
                                                )
 
 
     test_loader = torch.utils.data.DataLoader(dataset=dataset_testing,
                                                batch_size=batch_size,
-                                               shuffle=True)
+                                               shuffle=False)
     n_total_steps = len(train_loader)
 
     eps = []
@@ -155,27 +146,21 @@ if __name__ == "__main__":
     acc_train = []
     for epoch in range(num_epochs):
         for i, (images, labels) in enumerate(train_loader):
-            print(round(i*256 / 307000 *100,2),"%")
             images = images.to(device)
             labels = labels.to(device)
-            print(labels)
+
             # Forward pass
             outputs = model(images.float())
 
-            #labels=labels.long()
-            print(outputs.shape)
-            outputs = outputs.squeeze(0)
-            sqs = torch.nn.Softmax(outputs)
-            print(sqs)
-            print(sqs.shape)
-            loss = criterion(labels,outputs.float())
-
+            labels = labels.long()
+            loss = criterion(outputs.float(), labels)
             losses.append(loss.item())
             eps.append(epoch)
             # Backward and optimize
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            # print(f'Epoch [{epoch + 1}/{num_epochs}], Step [{i + 1}/{n_total_steps}], Loss: {loss.item():.4f}')
 
             #print(f'Epoch [{epoch + 1}/{num_epochs}], Step [{i + 1}/{n_total_steps}], Loss: {loss.item():.4f}')
         acc="NA"
@@ -183,10 +168,10 @@ if __name__ == "__main__":
         accs.append(acc)
         epocsl.append(epoch)
 
-        #acc_tr = check_accuracy(train_loader, model)
+        acc_tr = check_accuracy(train_loader, model)
         acc_train.append(acc)
 
-        print(f"Cost at epoch {epoch} is {sum(losses) / len(losses)},Train acc:NaN ,Validation acc:{acc}")
+        print(f"Cost at epoch {epoch} is {sum(losses) / len(losses)},Train acc:{acc_tr} ,Validation acc:{acc}")
         torch.save(model, f"C:/Users/emill/PycharmProjects/CLIP/canmodel/grus/AntiCheat{epoch}.pt")
     torch.save(model, "AntiCheat3.pt")
 
