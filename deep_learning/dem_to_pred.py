@@ -34,14 +34,7 @@ class GRUModel(nn.Module):
 
 class Model:
     def __init__(self,df_path):
-        my_scaler = joblib.load(r'C:\Users\emill/scaler.gz')
         self.df = pd.read_csv(df_path,header=None)
-        print(self.df)
-        #self.df = self.df.values  # returns a numpy array
-        print(self.df)
-        #self.df = my_scaler.transform(self.df)
-        #self.df = pd.DataFrame(self.df)
-        print(self.df)
         self.X = None
 
 
@@ -65,20 +58,13 @@ class Model:
     def predict(self,batch_size):
 
         X = self.extract_features()
-        print(X.shape, "EHRERERE")
         file = X[:,:,0]
         name = X[:,:,1]
         id = X[:,:,2]
         tick = X[:,:,3]
-
-        # Drop the id and tick since it's not fed into the model
         X = X[:,:,4:]
-        # Shape expected is (n,256,24). Example has 20 shots so the shape is (20,256,24)
 
-        #scaler = joblib.load('scaler.gz')
-        #X = scaler.transform(X.reshape(-1, X.shape[-1])).reshape(X.shape)
         print(f"Shape: {X.shape}")
-        print(X[0])
         X = X.astype(np.float32)
         # Deep learning model. Remove map_location if GPU-enabled PyTorch. Enabling GPU speeds up predictions, but may
         # not be needed if predicting small amounts of games
