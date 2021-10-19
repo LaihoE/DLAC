@@ -68,7 +68,10 @@ class Model:
         X = X.astype(np.float32)
         # Deep learning model. Remove map_location if GPU-enabled PyTorch. Enabling GPU speeds up predictions, but may
         # not be needed if predicting small amounts of games
-        model = torch.load("Anticheat7.pt",map_location=torch.device('cpu'))
+        model = torch.load("Anticheat2.pt",map_location=torch.device('cpu'))
+
+        for parameter in model.parameters():
+            print(parameter)
 
         # rounded up n shots / batch size
         total_batches = math.ceil(X.shape[0] / batch_size)
