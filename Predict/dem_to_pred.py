@@ -75,8 +75,8 @@ class Model:
         X = self.X
         X = X.reshape(-1,128,9)
         batch_size = 5000
-        file = X[:,:,0]
-        name = X[:,:,1]
+        file = X[:, :, 0]
+        name = X[:, :, 1]
         id = X[:,:,2]
         tick = X[:,:,3]
         X = X[:,:,4:]
@@ -89,9 +89,9 @@ class Model:
         # Headers
         with open('output.csv', 'w', newline='\n')as f:
             thewriter = csv.writer(f)
-            thewriter.writerow(["SteamId","Total_shots","Detections","Detections/Total_shots"])
+            thewriter.writerow(["SteamId", "Total_shots", "Detections", "Detections/Total_shots"])
         for inx in range(total_batches):
-            print(inx*batch_size)
+            print(inx * batch_size)
             x = X[inx * batch_size:inx * batch_size + batch_size, :, :]
             ids = id[inx * batch_size:inx * batch_size + batch_size, :]
             ticks = tick[inx * batch_size:inx * batch_size + batch_size, :]
@@ -99,14 +99,14 @@ class Model:
             files = file[inx * batch_size:inx * batch_size + batch_size]
             og = copy.deepcopy(x)
             for i in range(total_batches):
-                x = og[i*batch_size:i*batch_size+batch_size]
+                x = og[i * batch_size:i * batch_size + batch_size]
                 x = torch.tensor(x).to(device).float()
                 prd = self.model(x)
                 probs = torch.softmax(prd, 1)
                 for shot in range(x.shape[0]):
                     probability = probs[shot][1].item()
                     sussies.append((names[shot][0], round(probability, 2) * 100))
-                    timeline.append((names[shot][0],ticks[shot][0],round(probability, 2)))
+                    timeline.append((names[shot][0], ticks[shot][0], round(probability, 2)))
                     if ids[shot][0] not in all_shots_dict:
                         all_shots_dict[ids[shot][0]] = 1
                     else:
@@ -116,21 +116,23 @@ class Model:
                             detection_dict[ids[shot][0]] = 1
                         else:
                             detection_dict[ids[shot][0]] += 1
-                        #print("Name:",names[shot][0],"SteamId:",ids[shot][0],"Cheating:", round(probability, 2)*100, "%         ","Tick:",ticks[shot][0],"File:",files[shot][0])
+                        # print("Name:",names[shot][0],"SteamId:",ids[shot][0],"Cheating:", round(probability, 2)*100, "%         ","Tick:",ticks[shot][0],"File:",files[shot][0])
                         if self.raw:
-                            with open('cheaters.csv','a',newline='\n',encoding='UTF-8')as f:
+                            with open('cheaters.csv', 'a', newline='\n', encoding='UTF-8')as f:
                                 thewriter = csv.writer(f)
-                                thewriter.writerow([names[shot][0],ids[shot][0],round(probability, 2)*100,ticks[shot][0],files[shot][0]])
+                                thewriter.writerow(
+                                    [names[shot][0], ids[shot][0], round(probability, 2) * 100, ticks[shot][0],
+                                     files[shot][0]])
         preddict = {}
-        for k,v in detection_dict.items():
-            preddict[k] = [all_shots_dict[k],detection_dict[k],detection_dict[k]/all_shots_dict[k]]
+        for k, v in detection_dict.items():
+            preddict[k] = [all_shots_dict[k], detection_dict[k], detection_dict[k] / all_shots_dict[k]]
 
         # Outputs come from here
         out = {k: v for k, v in sorted(preddict.items(), key=lambda item: item[1][2], reverse=True)}
         with open('output.csv', 'a', newline='\n')as f:
             thewriter = csv.writer(f)
             for k, v in out.items():
-                print(k,v[0],v[1],v[2])
+                print(k, v[0], v[1], v[2])
                 thewriter.writerow([k, v[0], v[1], v[2]])
 
 
