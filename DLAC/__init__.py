@@ -1,0 +1,1 @@
+from .anticheat import Model
