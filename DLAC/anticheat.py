@@ -89,5 +89,5 @@ def parser(dem_folder):
 
 
 if __name__ == "__main__":
-    model = Model("C:/Users/emill/PycharmProjects/CleanAntiCheat/ML-AntiCheat/src/demos/")
+    model = Model("Path_to_demos")
     model.predict_to_terminal()
