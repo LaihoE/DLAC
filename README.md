@@ -19,11 +19,20 @@ outputs = model.predict_to_list()
 model.predict_to_csv("outputs.csv")
 ```
 
-Example output from one shot  
+## Example output from one shot  
 ```CSV
 Name, Confidence of cheating, SteamId, File
 PeskyCheater22, 0.9601634, 123456789, exampledemo.dem
 ```
+## Setup
+Requires [Golang](https://golang.org/dl/)!
+```
+git clone https://github.com/LaihoE/DLAC  
+cd DLAC
+python setup.py install
+```
+
+
 
 ## Special thank you to
 Demoinfocs-golang is the underlying parser used for parsing the demos, found at:  
