@@ -1,4 +1,4 @@
-# Deep Learning AntiCheat For CSGO
+# Deep Learning Anti-Cheat For CSGO
 
 ## Work in progress  
 
