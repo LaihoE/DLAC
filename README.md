@@ -1,6 +1,8 @@
 # Deep Learning AntiCheat For CSGO
-You input the directory where your .dem files are, and the model will give you predictions of every shot that hits an enemy during the game.  
 
+## Work in progress  
+
+Input the directory with your .dem files and the model outputs predictions for every shot during the game.
 
 ```python
 from DLAC import Model
