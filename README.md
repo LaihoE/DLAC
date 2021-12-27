@@ -2,11 +2,12 @@
 You input the directory where your .dem files are, and the model will give you predictions of every shot that hits an enemy during the game.  
 The code outputs a CSV file with the predictions.
 
-```
+```python
 from DLAC import Model
 
-#model = Model("./path_to_demos/")
+model = Model("./path_to_demos/")
 model.predict_to_terminal()     # Prints outputs
+
 model.predict_to_terminal(threshold=0.99)   # You can manually specify threshold, 0.95 by default
 
 # You can also get the outputs into a python list
