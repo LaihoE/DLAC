@@ -129,12 +129,12 @@ var wg sync.WaitGroup
 
 
 //export startparsing
-func startparsing(a string, source *C.char){
-    //fmt.Println("b:", C.GoString(source))
-    //fmt.Println("c:", c)
+func startparsing(directory *C.char, source *C.char){
+    dir := C.GoString(directory)
+    fmt.Println(dir)
+
     source_go := C.GoString(source)
-    //source_go := C.GoString(source)
-    //fmt.Println(source_go,"FROM GOLANG")
+    fmt.Println(source_go)
 	files, err := ioutil.ReadDir(source_go)
 	if err != nil {
 		log.Fatal(err)

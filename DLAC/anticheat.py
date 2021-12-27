@@ -1,4 +1,6 @@
 import csv
+import time
+
 import pandas as pd
 import math
 import numpy as np
@@ -8,6 +10,7 @@ from ctypes import *
 from ctypes import cdll
 
 
+# Send paths to Golang
 class go_string(Structure):
     _fields_ = [
         ("p", c_char_p),
@@ -18,11 +21,19 @@ class Model:
 
     def __init__(self, dem_folder):
         dirname = os.path.dirname(__file__)
-        parser(dem_folder.encode())
+        self._parser(dem_folder, dirname)
         # Parser outputs 1x1152 row
         self.X = pd.read_csv(os.path.join(dirname, 'data/data.csv'), header=None).to_numpy().reshape(-1, 128, 9)
+        # Remove file after reading
+        os.remove(os.path.join(dirname, 'data/data.csv'))
         # ONNX
         self.ort_session = onnxruntime.InferenceSession(os.path.join(dirname, 'models/small.onnx'))
+
+    # Calls Go parser
+    def _parser(self, dem_folder, dirname):
+        lib = cdll.LoadLibrary(os.path.join(dirname, 'parser.so'))
+        lib.startparsing.restype = c_char_p
+        lib.startparsing(c_char_p(dirname.encode()), c_char_p(dem_folder.encode()))
 
     def _predict(self, batch_size):
         # Parser outputs other information that isn't used in the prediction and is combined after prediction
@@ -78,16 +89,3 @@ class Model:
             if self.confidence[shot] > threshold:
                 outputs.append([self.name[shot], self.confidence[shot], self.id[shot], self.file[shot]])
         return outputs
-
-
-# Calls Go parser
-def parser(dem_folder):
-    lib = cdll.LoadLibrary("parser.so")
-    b = go_string(c_char_p(dem_folder), len(dem_folder))
-    lib.startparsing.restype = c_char_p
-    lib.startparsing(b, c_char_p(dem_folder))
-
-
-if __name__ == "__main__":
-    model = Model("Path_to_demos")
-    model.predict_to_terminal()
