@@ -89,3 +89,28 @@ class Model:
             if self.confidence[shot] > threshold:
                 outputs.append([self.name[shot], self.confidence[shot], self.id[shot], self.file[shot]])
         return outputs
+
+    def predict_total_detections_to_dict(self, batch_size=1000):
+        output_dict = {}
+        self._predict(batch_size)  # Does the actual prediction
+        # Loop trough each shot in the game
+        for shot in range(len(self.confidence)):
+            if self.name[shot] not in output_dict:
+                output_dict[self.name[shot]] = 1
+            else:
+                output_dict[self.name[shot]] += 1
+        out = {k: v for k, v in sorted(output_dict.items(),reverse=True, key=lambda item: item[1])}
+        return out
+
+    def predict_averages_to_dict(self, batch_size=1000):
+        output_dict = {}
+        self._predict(batch_size)  # Does the actual prediction
+        # Loop trough each shot in the game
+        for shot in range(len(self.confidence)):
+            if self.name[shot] not in output_dict:
+                output_dict[self.name[shot]] = [self.confidence[shot]]
+            else:
+                output_dict[self.name[shot]].append(self.confidence[shot])
+        out = {k: sum(v) / len(v) for k, v in sorted(output_dict.items(), key=lambda item: item[1])}
+        out = {k: v for k, v in sorted(out.items(),reverse=True ,key=lambda item: item[1])}
+        return out
