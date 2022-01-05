@@ -7,7 +7,6 @@ import (
 	"log"
 	"math"
 	"os"
-	"strconv"
 	"sync"
 	"C"
 
@@ -236,23 +235,12 @@ func parseDemo(source string, name string) {
 	// and mark surrounding frames for retrieval.
 	attackCount := 0
 
-	records := readCsvFile("C:/Users/emill/PycharmProjects/csgoparse/main_ids.csv")
 
 	p.RegisterEventHandler(func(e events.PlayerHurt) {
 		if !validGuns[e.Weapon.String()] {
 			return
 		}
 
-		for i := 0; i < len(records); i++ {
-			suspect := records[i][1]
-			s, _ := strconv.Atoi(suspect)
-			if e.Attacker.SteamID64 != uint64(s) { // Ignore bots
-				break
-
-			} else if i == len(records)-1 {
-				return
-			}
-		}
 
 		attackCount++
 		attackFrame := p.CurrentFrame()
