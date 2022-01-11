@@ -38,7 +38,7 @@ First iteration of this one seems to do similarly/better than the very optimized
 ## Transformer model
 ![alt text](https://github.com/LaihoE/DLAC/blob/main/images/Transformer.png?raw=true)  
 If we can feed it patches of words, images, sequences of speech pieces or (states, actions, rewards), why not sequences of kills?  
-Currently not working too great. Could it be the fault of the implementer🤔.
+Currently not working too great. Could it be the fault of the implementer🤔. Very experimental, maybe replace GRU with simple linear layer or maybe CNN?
 ## Performance
 Parsing 100 MM demos using AMD Ryzen 9 5900x (12 cores 24 threads) and m2 SSD. 
 
