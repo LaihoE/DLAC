@@ -31,18 +31,24 @@ python setup.py install
 # Architecture (totally not done in paint)
 Code and training loop found in "training" directory.
 ## Current simple design
-![alt text](https://github.com/LaihoE/DLAC/blob/main/images/current.png?raw=true)  
+ 
+<img src="https://github.com/LaihoE/DLAC/blob/main/images/current.png?raw=true" width="200">  
+
 Main problem with this one is that it does the predictions independent of each other so the model can't make predictions with full information. Will probably be superseded by below models.
 ## Multiple-kill-input GRU model
-![alt text](https://github.com/LaihoE/DLAC/blob/main/images/Gruception.png?raw=true)  
+
+<img src="https://github.com/LaihoE/DLAC/blob/main/images/Gruception.png?raw=true" width="200">  
+
 First iteration of this one seems to do similarly/better than the very optimized simple model.
 ## Transformer model
-![alt text](https://github.com/LaihoE/DLAC/blob/main/images/Transformer.png?raw=true)  
+
+<img src="https://github.com/LaihoE/DLAC/blob/main/images/Transformer.png?raw=true" width="200">  
+
 If we can feed it patches of words, images, sequences of speech pieces or (states, actions, rewards), why not sequences of kills?  
 Currently not working too great. Could it be the fault of the implementer? 🤔. Very experimental, maybe replace GRU with simple linear layer or maybe CNN?
 
 # Data
-Around 500GB-1TB, shape = (n_kills, timesteps, 6), training data depending on how you slice the data. The 6th variable is ID of player so that you can group together kills. 320 timesteps in total (currently only using 128).
+Around 500GB-1TB training data depending on how you slice the data, shape = (n_kills, timesteps, 6). The 6th variable is ID of player so that you can group together kills. 320 timesteps in total (currently only using 128).
 
 ## Speed
 Parsing 100 MM demos using AMD Ryzen 9 5900x (12 cores 24 threads) and m2 SSD. 
