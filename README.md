@@ -29,13 +29,13 @@ cd DLAC
 python setup.py install
 ```
 ## Architecture (totally not done in paint)
-###Current simple design
+### Current simple design
 ![alt text](https://github.com/LaihoE/DLAC/blob/main/images/current.png?raw=true)
 Main problem with this one is that it does the predictions independent of each other so the model can't make predictions with full information. Will probably be superseded by below models.
-###Multiple kill input GRU model
+### Multiple kill input GRU model
 ![alt text](https://github.com/LaihoE/DLAC/blob/main/images/Gruception.png?raw=true)
 First iteration of this one seems to do similarly/better than the very optimized simple model.
-###Transformer model
+### Transformer model
 ![alt text](https://github.com/LaihoE/DLAC/blob/main/images/Transformer.png?raw=true)
 If we can feed it patches of words, images, sequences of speech pieces or (states, actions, rewards), why not sequences of kills?  
 Currently not working too great, probably made some mistakes somewhere.
