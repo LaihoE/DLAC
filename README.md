@@ -32,17 +32,17 @@ python setup.py install
 Code and training loop found in "training" directory.
 ## Current simple design
  
-<img src="https://github.com/LaihoE/DLAC/blob/main/images/current.png?raw=true" width="200">  
+<img src="https://github.com/LaihoE/DLAC/blob/main/images/current.png?raw=true" width="400">  
 
 Main problem with this one is that it does the predictions independent of each other so the model can't make predictions with full information. Will probably be superseded by below models.
 ## Multiple-kill-input GRU model
 
-<img src="https://github.com/LaihoE/DLAC/blob/main/images/Gruception.png?raw=true" width="200">  
+<img src="https://github.com/LaihoE/DLAC/blob/main/images/Gruception.png?raw=true" width="400">  
 
 First iteration of this one seems to do similarly/better than the very optimized simple model.
 ## Transformer model
 
-<img src="https://github.com/LaihoE/DLAC/blob/main/images/Transformer.png?raw=true" width="200">  
+<img src="https://github.com/LaihoE/DLAC/blob/main/images/Transformer.png?raw=true" width="400">  
 
 If we can feed it patches of words, images, sequences of speech pieces or (states, actions, rewards), why not sequences of kills?  
 Currently not working too great. Could it be the fault of the implementer? 🤔. Very experimental, maybe replace GRU with simple linear layer or maybe CNN?
