@@ -29,6 +29,7 @@ cd DLAC
 python setup.py install
 ```
 # Architecture (totally not done in paint)
+Code and training loop found in "training" directory.
 ## Current simple design
 ![alt text](https://github.com/LaihoE/DLAC/blob/main/images/current.png?raw=true)  
 Main problem with this one is that it does the predictions independent of each other so the model can't make predictions with full information. Will probably be superseded by below models.
