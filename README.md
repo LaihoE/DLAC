@@ -22,7 +22,8 @@ Name, Confidence of cheating, SteamId, File
 PeskyCheater22, 0.9601634, 123456789, exampledemo.dem
 ```
 ## Setup
-Requires [Golang](https://golang.org/dl/)!
+Requires [Golang](https://golang.org/dl/)!  
+Developed on Go 1.15.13, python 3.7 and windows 10 (not certain about compatability)
 ```
 git clone https://github.com/LaihoE/DLAC  
 cd DLAC
