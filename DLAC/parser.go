@@ -23,7 +23,7 @@ import (
 
 
 // File paths
-var dest = "data/data.csv"
+//var dest = "data/data.csv"
 
 
 // Defines amount of frames to collect around attacks
@@ -129,8 +129,8 @@ var wg sync.WaitGroup
 
 //export startparsing
 func startparsing(directory *C.char, source *C.char){
-    dir := C.GoString(directory)
-    fmt.Println(dir)
+    dest := C.GoString(directory)
+
 
     source_go := C.GoString(source)
     fmt.Println(source_go)
@@ -144,7 +144,7 @@ func startparsing(directory *C.char, source *C.char){
 		go parseDemo(source_go, f.Name())
 	}
 	wg.Wait()
-	csvExport()
+	csvExport(dest)
 }
 
 func main() {
@@ -240,7 +240,6 @@ func parseDemo(source string, name string) {
 		if !validGuns[e.Weapon.String()] {
 			return
 		}
-
 
 		attackCount++
 		attackFrame := p.CurrentFrame()
@@ -402,8 +401,9 @@ func extractPlayerData(
 		player.Health()}
 }
 
-func csvExport() error {
-	file, err := os.OpenFile(dest, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+func csvExport(dest string) error {
+    dataDest := dest+"/data/data.csv"
+	file, err := os.OpenFile(dataDest, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
