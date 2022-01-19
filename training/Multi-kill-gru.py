@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 from einops import rearrange, repeat
 from sklearn.metrics import f1_score,precision_score,recall_score
+import webdataset as wds
 
 
 class TestDataset(Dataset):
@@ -78,9 +79,10 @@ class GruCeption(nn.Module):
         self.hidden_dim = first_hidden_dim
         self.gru = nn.GRU(input_dim, first_hidden_dim, layer_dim, batch_first=True, dropout=dropout_prob)
         self.fc = nn.Linear(second_hidden_dim, output_dim)
-        self.gru2 = nn.GRU(number_of_kills, second_hidden_dim, output_dim, batch_first=True, dropout=dropout_prob)
+        self.gru2 = nn.GRU(number_of_kills, second_hidden_dim, layer_dim, batch_first=True, dropout=dropout_prob)
 
     def forward(self, X):
+        print(X.shape)
         # first kill like this for easy torch.cat
         x = X[:,0,:,:]
         h0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).requires_grad_().to(device)
@@ -94,7 +96,7 @@ class GruCeption(nn.Module):
             out, _ = self.gru(x, h0.detach())
             out2 = out[:, -1, :]
             out2 = out2.reshape((-1, 1, self.hidden_dim))
-            o = torch.cat((o,out2), dim=1)
+            o = torch.cat((o, out2), dim=1)
 
         # Batch nkills hsize -> Batch hsize nkills
         o = rearrange(o,'b n h -> b h n')
@@ -117,21 +119,21 @@ if __name__ == "__main__":
     embedding_dim = 5
     first_hidden_size = 256
     second_hidden_size = 256
-    num_layers = 2
+    num_layers = 1
     num_classes = 2
     dropout = 0.1
-    batch_size = 512
+    batch_size = 256
 
-    model = GruCeption(input_size, first_hidden_size, second_hidden_size,
-                       num_layers, num_classes, 0.2, number_of_kills=25).to(device)
+    model = GruCeption(input_size, first_hidden_size, second_hidden_size, num_layers, num_classes, 0.2, number_of_kills=25).to(device)
+    #model = GruCeption(input_size, first_hidden_size, second_hidden_size, num_layers, num_classes, 0.2, number_of_kills=25).to(device)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-    import webdataset as wds
+
     # Finally found the only good OOM-dataset
     dataset_train = (
-        wds.WebDataset("shards/a/shard{0000000..000226}.tar")
+        wds.WebDataset("shards/a/shard{0000000..000227}.tar")
         .shuffle(1000)
         .decode()
         .to_tuple("x.pyd", "y.cls")
@@ -142,7 +144,7 @@ if __name__ == "__main__":
     test_loader = torch.utils.data.DataLoader(dataset=dataset_testing,
                                               batch_size=batch_size,
                                               shuffle=True)
-
+    scaler = torch.cuda.amp.GradScaler()
     for epoch in range(100):
         losses = []
         for i, (data, labels) in enumerate(train_loader):
@@ -153,9 +155,10 @@ if __name__ == "__main__":
                 loss = criterion(outputs, labels)
 
             losses.append(loss.item())
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+
             # mid epoch check
             if i % 1000 == 0:
                 acc = check_accuracy(test_loader, model)

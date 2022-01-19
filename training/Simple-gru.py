@@ -122,6 +122,7 @@ if __name__ == "__main__":
                                               batch_size=batch_size,
                                               shuffle=True)
 
+    scaler = torch.cuda.amp.GradScaler()
     for epoch in range(100):
         losses = []
         for i, (data, labels) in enumerate(train_loader):
@@ -132,9 +133,9 @@ if __name__ == "__main__":
                 loss = criterion(outputs, labels)
 
             losses.append(loss.item())
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
             # mid epoch check
             if i % 1000 == 0:
                 acc = check_accuracy(test_loader, model)
