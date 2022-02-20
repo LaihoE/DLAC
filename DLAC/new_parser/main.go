@@ -22,9 +22,10 @@ import (
 
 
 
+
 // USEAGE go run main.go "path_to_demos" -> outputs data to /data
-// USEAGE go run main.go "path_to_demos" -> outputs data to /data
-// USEAGE go run main.go "path_to_demos" -> outputs data to /data
+
+
 
 
 
