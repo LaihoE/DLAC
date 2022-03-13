@@ -28,7 +28,7 @@ import (
 
 // Defines amount of frames to collect around attacks
 const samplesPerSecond = 32
-const secondsBeforeAttack = 3
+const secondsBeforeAttack = 5
 const secondsAfterAttack = 1
 const secondsPerAttack = secondsBeforeAttack + secondsAfterAttack
 const samplesPerAttack = int(samplesPerSecond * secondsPerAttack)

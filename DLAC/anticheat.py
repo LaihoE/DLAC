@@ -1,6 +1,7 @@
 import csv
 import time
-
+import sklearn
+import joblib
 import pandas as pd
 import math
 import numpy as np
@@ -19,15 +20,24 @@ class go_string(Structure):
 
 class Model:
 
-    def __init__(self, dem_folder):
+    def __init__(self, dem_folder, model_type='small'):
+        self.model_type = model_type
         dirname = os.path.dirname(__file__)
         self._parser(dem_folder, dirname)
-        # Parser outputs 1x1152 row
-        self.X = pd.read_csv(os.path.join(dirname, 'data/data.csv'), header=None).to_numpy().reshape(-1, 128, 9)
+        # Parser outputs 1x1728 row
+        self.scaler = joblib.load(os.path.join(dirname, 'scaler.gz'))
+        self.X = pd.read_csv(os.path.join(dirname, 'data/data.csv'), header=None).to_numpy().reshape(-1, 192, 9)
         # Remove file after reading
         os.remove(os.path.join(dirname, 'data/data.csv'))
         # ONNX
-        self.ort_session = onnxruntime.InferenceSession(os.path.join(dirname, 'models/small.onnx'))
+
+        if model_type == 'small':
+            self.ort_session = onnxruntime.InferenceSession(os.path.join(dirname, 'models/small.onnx'))
+        elif model_type == 'big':
+            self.ort_session = onnxruntime.InferenceSession(os.path.join(dirname, 'models/bigger.onnx'))
+        else:
+            raise FileNotFoundError('Unknown model_type, use "small" or "big"')
+
 
     # Calls Go parser
     def _parser(self, dem_folder, dirname):
@@ -42,10 +52,16 @@ class Model:
         self.id = self.X[:, 0, 2]
         self.tick = self.X[:, 0, 3]
 
-        self.X = np.float32(self.X[:, :, 4:])  # Data that is input into the model. Model expects (n_samples, 128, 5)
+        self.X = np.float32(self.X[:, :, 4:])  # Data that is input into the model.
+        # Only the bigger model uses scaling
+        if self.model_type == 'big':
+            self.X = self.scaler.transform(self.X.reshape(-1, 5)).reshape(-1, 192, 5)
+        else:
+            # smaller model uses 128 tick and bigger uses 192
+            self.X = self.X[:, 192-128:, :]
+
         total_batches = math.ceil(self.X.shape[0] / batch_size)
         confidence = []
-
         for batch in range(total_batches):
             # Slice current batch
             data_this_batch = self.X[batch_size * batch: batch_size * batch + batch_size, :, :]

@@ -8,10 +8,19 @@ Input the directory with your .dem files and the model outputs predictions for e
 from DLAC import Model
 
 model = Model("./path_to_demos/")
-
-model.predict_to_terminal(threshold=0.99)   # You can manually specify threshold, 0.95 by default
-
+model.predict_to_terminal(threshold=0.95)   # You can manually specify threshold, 0.95 by default
 ```
+
+## You can choose between a bigger and a smaller model
+```python
+from DLAC import Model
+
+model = Model("./path_to_demos/", model_type='big')
+model.predict_to_terminal(threshold=0.99)   # 0.99 is recommended with the bigger model
+```
+The bigger model is slower with slightly better accuracy  
+
+
 Other ways to output predictions  
 model.predict_to_csv()  
 model.predict_to_list()
