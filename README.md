@@ -1,6 +1,6 @@
 # Deep Learning Anti-Cheat For CSGO
 
-## Work in progress  
+
 
 Input the directory with your .dem files and the model outputs predictions for every shot during the game.
 
@@ -9,6 +9,20 @@ from DLAC import Model
 
 model = Model("./path_to_demos/")
 model.predict_to_terminal(threshold=0.95)   # You can manually specify threshold, 0.95 by default
+```
+## Installation
+####Windows
+Should be as easy as:
+```python
+pip install DLAC
+```
+Linux users will need to build the .so file. This requres GO.
+```
+git clone https://github.com/LaihoE/DLAC  
+cd DLAC
+python3 setup.py install
+cd DLAC
+go build -o parser.so -buildmode=c-shared
 ```
 
 ## You can choose between a bigger and a smaller model
@@ -25,11 +39,7 @@ Other ways to output predictions
 model.predict_to_csv()  
 model.predict_to_list()
 
-## Installation
-On Windows it should be as easy as:
-```python
-pip install DLAC
-```
+
 
 
 
