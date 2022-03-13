@@ -25,19 +25,20 @@ Other ways to output predictions
 model.predict_to_csv()  
 model.predict_to_list()
 
+## Installation
+On Windows it should be as easy as:
+```python
+pip install DLAC
+```
+
+
+
 ## Example output from one shot  
 ```CSV
 Name, Confidence of cheating, SteamId, File
 PeskyCheater22, 0.9601634, 123456789, exampledemo.dem
 ```
-## Setup
-Requires [Golang](https://golang.org/dl/)!  
-Developed on Go 1.15.13, python 3.7 and windows 10 (not certain about compatability)
-```
-git clone https://github.com/LaihoE/DLAC  
-cd DLAC
-python setup.py install
-```
+
 # Architecture (totally not done in paint)
 Code and training loop found in "training" directory.
 ## Current simple design
