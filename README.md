@@ -11,7 +11,7 @@ model = Model("./path_to_demos/")
 model.predict_to_terminal(threshold=0.95)   # You can manually specify threshold, 0.95 by default
 ```
 ## Installation
-####Windows
+Windows
 Should be as easy as:
 ```python
 pip install DLAC
